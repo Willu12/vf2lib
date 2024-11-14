@@ -7,7 +7,6 @@
  * $Id: match.h,v 1.1 1998/09/29 09:49:48 foggia Exp $
  *-----------------------------------------------------------------*/
 
-
 /*-----------------------------------------------------------------
  * REVISION HISTORY
  *   $Log: match.h,v $
@@ -15,7 +14,6 @@
  *   Initial revision
  *
  *----------------------------------------------------------------*/
-
 
 #ifndef MATCH_H
 #define MATCH_H
@@ -30,11 +28,12 @@
  * If the function returns false, then the next match is
  * searched; else the seach process terminates.
  -----------------------------------------------------------*/
-typedef bool (*match_visitor)(int n, node_id c1[], node_id c2[], 
-                              void *usr_data);
+typedef bool (*match_visitor)(int n, node_id c1[], node_id c2[], void* usr_data);
 
-bool match(State *s0, int *pn, node_id c1[], node_id c2[]);
+namespace vf2
+{
+bool match(State* s0, int* pn, node_id c1[], node_id c2[]);
 
-int match(State *s0, match_visitor vis, void *usr_data=NULL);
-
+int match(State* s0, match_visitor vis, void* usr_data = NULL);
+} // namespace vf2
 #endif
