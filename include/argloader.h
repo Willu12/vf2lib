@@ -8,19 +8,17 @@
  * Author: P. Foggia
  *-----------------------------------------------------------------*/
 
-
-
 /*-----------------------------------------------------------------
- * DESCRIPTION OF THE TEXT FILE FORMAT 
+ * DESCRIPTION OF THE TEXT FILE FORMAT
  * On the first line there must be the number of nodes;
- * subsequent lines will contain the node attributes, one node per 
+ * subsequent lines will contain the node attributes, one node per
  * line, preceded by the node id; node ids must be in the range from
  * 0 to the number of nodes - 1.
- * Then, for each node there is the number of edges coming out of 
- * the node, followed by a line for each edge containing the 
+ * Then, for each node there is the number of edges coming out of
+ * the node, followed by a line for each edge containing the
  * ids of the edge ends and the edge attribute.
  * Blank lines, and lines starting with #, are ignored.
- * An example file, where both node and edge attributes are ints, 
+ * An example file, where both node and edge attributes are ints,
  * could be the following:
      # Number of nodes
      3
@@ -41,7 +39,6 @@
      # Edges coming out of node 2
      0
   *-----------------------------------------------------------------*/
-
 
 /*---------------------------------------------------------------------------
  *   DESCRIPTION OF THE BINARY FILE FORMAT
@@ -68,7 +65,6 @@
 #include <strstream>
 #include <ctype.h>
 
-
 //
 // if the following line cause errors, your compiler
 // does not recognize C++ namespaces. Just comment it out.
@@ -78,45 +74,39 @@
 //
 using namespace std;
 
-
-
 #include "argedit.h"
 #include "allocpool.h"
 
-template <class Node, class Edge>
-class StreamARGLoader: public ARGEdit
-  { 
-    public:
-      typedef Allocator<Node> NodeAllocator;
-      typedef Allocator<Edge> EdgeAllocator;
+template <class Node, class Edge> class StreamARGLoader : public ARGEdit {
+  public:
+    typedef Allocator<Node> NodeAllocator;
+    typedef Allocator<Edge> EdgeAllocator;
 
-      StreamARGLoader(NodeAllocator *nalloc, EdgeAllocator *ealloc, 
-                      istream &in);
+    StreamARGLoader(NodeAllocator* nalloc, EdgeAllocator* ealloc, istream& in);
 
-      static void write(ostream &out, ARGraph<Node, Edge> &g);
-      static void write(ostream &out, ARGLoader &g);
+    static void write(ostream& out, ARGraph<Node, Edge>& g);
+    static void write(ostream& out, ARGLoader& g);
 
-    private:
+  private:
+    enum {
+        MAX_LINE = 512
+    };
+    void readLine(istream& in, char* line);
+    int readCount(istream& in);
+    void readNode(NodeAllocator* alloc, istream& in);
+    void readEdge(EdgeAllocator* alloc, istream& in);
+};
 
-      enum { MAX_LINE=512 };
-      void readLine(istream &in, char *line);
-      int  readCount(istream &in);
-      void readNode(NodeAllocator *alloc, istream &in);
-      void readEdge(EdgeAllocator *alloc, istream &in);
-  };
+class BinaryGraphLoader : public ARGEdit {
+  public:
+    BinaryGraphLoader(istream& in);
+    static void write(ostream& out, Graph& g);
+    static void write(ostream& out, ARGLoader& g);
 
-
-class BinaryGraphLoader: public ARGEdit
-  { public:
-      BinaryGraphLoader(istream &in);
-      static void write(ostream &out, Graph &g);
-      static void write(ostream &out, ARGLoader &g);
-
-    private:
-      static unsigned readWord(istream &in);
-      static void writeWord(ostream &out, unsigned w);
-  };
-
+  private:
+    static unsigned readWord(istream& in);
+    static void writeWord(ostream& out, unsigned w);
+};
 
 /*------------------------------------------------------------
  * Methods of the class StreamArgLoader
@@ -126,157 +116,136 @@ class BinaryGraphLoader: public ARGEdit
  * Constructor
  ---------------------------------------------------------*/
 template <class Node, class Edge>
-StreamARGLoader<Node, Edge>::
-StreamARGLoader(Allocator<Node> *nalloc, 
-                Allocator<Edge> *ealloc, 
-                istream &in)
-  { 
-    int cnt=readCount(in);
-    if (cnt<=0)
-      { cnt=0;
+StreamARGLoader<Node, Edge>::StreamARGLoader(Allocator<Node>* nalloc, Allocator<Edge>* ealloc, istream& in) {
+    int cnt = readCount(in);
+    if (cnt <= 0) {
+        cnt = 0;
         return;
-      }
+    }
 
     int i;
-    for(i=0; i<cnt; i++)
-      { readNode(nalloc, in);
-      }
+    for (i = 0; i < cnt; i++) {
+        readNode(nalloc, in);
+    }
 
-    for(i=0; i<cnt; i++)
-      { int ecount, j;
-        ecount=readCount(in);
-        for(j=0; j<ecount; j++)
-          readEdge(ealloc, in);
-      }
-        
-  }
+    for (i = 0; i < cnt; i++) {
+        int ecount, j;
+        ecount = readCount(in);
+        for (j = 0; j < ecount; j++)
+            readEdge(ealloc, in);
+    }
+}
 
 /*------------------------------------------------------
  * Reads a line from the input stream
  ----------------------------------------------------*/
-template <class Node, class Edge>
-void StreamARGLoader<Node, Edge>::
-readLine(istream &in, char *line)
-  { 
-    char *p;
+template <class Node, class Edge> void StreamARGLoader<Node, Edge>::readLine(istream& in, char* line) {
+    char* p;
     do {
-      *line='\0';
-      if (!in.good())
-        error("End of file or reading error");
-      in.getline(line, MAX_LINE);
-      for(p=line; isspace(*p); p++)
-        ;
-    } while (*p=='\0' || *p=='#');
-  }
+        *line = '\0';
+        if (!in.good()) error("End of file or reading error");
+        in.getline(line, MAX_LINE);
+        for (p = line; isspace(*p); p++)
+            ;
+    } while (*p == '\0' || *p == '#');
+}
 
 /*------------------------------------------------------
  * Reads an int from a line
  ----------------------------------------------------*/
-template <class Node, class Edge>
-int StreamARGLoader<Node, Edge>::
-readCount(istream &in)
-  { char line[MAX_LINE+1];
+template <class Node, class Edge> int StreamARGLoader<Node, Edge>::readCount(istream& in) {
+    char line[MAX_LINE + 1];
     readLine(in, line);
-    
+
     int i;
     istrstream is(line);
-    is>>i;
+    is >> i;
 
     return i;
-  }
+}
 
 /*------------------------------------------------------
  * Reads a node from a line
  ----------------------------------------------------*/
-template <class Node, class Edge>
-void StreamARGLoader<Node, Edge>::
-readNode(Allocator<Node> *alloc, istream &in)
-  { char line[MAX_LINE+1];
+template <class Node, class Edge> void StreamARGLoader<Node, Edge>::readNode(Allocator<Node>* alloc, istream& in) {
+    char line[MAX_LINE + 1];
     readLine(in, line);
     istrstream is(line);
-    
-    Node *nattr=alloc->Allocate();
+
+    Node* nattr = alloc->Allocate();
     node_id id;
 
     is >> id >> *nattr;
 
-    if (id != NodeCount())
-      error("File format error\n  Line: %s", line);
+    if (id != NodeCount()) error("File format error\n  Line: %s", line);
 
     InsertNode(nattr);
-  }
+}
 
 /*------------------------------------------------------
  * Reads an edge from a line
  ----------------------------------------------------*/
-template <class Node, class Edge>
-void StreamARGLoader<Node, Edge>::
-readEdge(Allocator<Edge> *alloc, istream &in)
-  { char line[MAX_LINE+1];
+template <class Node, class Edge> void StreamARGLoader<Node, Edge>::readEdge(Allocator<Edge>* alloc, istream& in) {
+    char line[MAX_LINE + 1];
     readLine(in, line);
     istrstream is(line);
-    
-    Edge *eattr=alloc->Allocate();
+
+    Edge* eattr = alloc->Allocate();
     node_id id1, id2;
 
     is >> id1 >> id2 >> *eattr;
 
     InsertEdge(id1, id2, eattr);
-  }
-
+}
 
 /*-----------------------------------------------------------
- * Writes an ARGraph on a stream in a format 
+ * Writes an ARGraph on a stream in a format
  * readable by StreamARGLoader.
  * Relies on stream output operators for the
  * Node and Edge types
  ----------------------------------------------------------*/
-template <class Node, class Edge>
-void StreamARGLoader<Node,Edge>::
-write(ostream &out, ARGraph<Node, Edge> &g)
-  { out << g.NodeCount() << endl;
+template <class Node, class Edge> void StreamARGLoader<Node, Edge>::write(ostream& out, ARGraph<Node, Edge>& g) {
+    out << g.NodeCount() << endl;
 
     int i;
-    for(i=0; i<g.NodeCount(); i++)
-      out << i << ' ' << *g.GetNodeAttr(i) << endl;
+    for (i = 0; i < g.NodeCount(); i++)
+        out << i << ' ' << *g.GetNodeAttr(i) << endl;
 
     int j;
-    for(i=0; i<g.NodeCount(); i++)
-      { out << g.OutEdgeCount(i) << endl;
-        for(j=0; j<g.OutEdgeCount(i); j++)
-          { int k;
-            Edge *attr;
-            k=g.GetOutEdge(i, j, &attr);
+    for (i = 0; i < g.NodeCount(); i++) {
+        out << g.OutEdgeCount(i) << endl;
+        for (j = 0; j < g.OutEdgeCount(i); j++) {
+            int k;
+            Edge* attr;
+            k = g.GetOutEdge(i, j, &attr);
             out << i << ' ' << k << ' ' << *attr << endl;
-          }
-      }
-  }
+        }
+    }
+}
 
 /*-----------------------------------------------------------
- * Writes an ARGLoader on a stream in a format 
+ * Writes an ARGLoader on a stream in a format
  * readable by StreamARGLoader.
  * Relies on stream output operators for the
  * Node and Edge types
  ----------------------------------------------------------*/
-template <class Node, class Edge>
-void StreamARGLoader<Node,Edge>::
-write(ostream &out, ARGLoader &g)
-  { out << g.NodeCount() << endl;
+template <class Node, class Edge> void StreamARGLoader<Node, Edge>::write(ostream& out, ARGLoader& g) {
+    out << g.NodeCount() << endl;
 
     int i;
-    for(i=0; i<g.NodeCount(); i++)
-      out << i << ' ' << *(Node *)g.GetNodeAttr(i) << endl;
+    for (i = 0; i < g.NodeCount(); i++)
+        out << i << ' ' << *(Node*)g.GetNodeAttr(i) << endl;
 
     int j;
-    for(i=0; i<g.NodeCount(); i++)
-      { out << g.OutEdgeCount(i) << endl;
-        for(j=0; j<g.OutEdgeCount(i); j++)
-          { int k;
-            void *attr;
-            k=g.GetOutEdge(i, j, &attr);
-            out << i << ' ' << k << ' ' << *(Edge *)attr << endl;
-          }
-      }
-  }
+    for (i = 0; i < g.NodeCount(); i++) {
+        out << g.OutEdgeCount(i) << endl;
+        for (j = 0; j < g.OutEdgeCount(i); j++) {
+            int k;
+            void* attr;
+            k = g.GetOutEdge(i, j, &attr);
+            out << i << ' ' << k << ' ' << *(Edge*)attr << endl;
+        }
+    }
+}
 
 #endif

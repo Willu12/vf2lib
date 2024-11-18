@@ -26,10 +26,13 @@ add_library(vf2lib STATIC
 "src/vf2_mono_state.cc"
 "src/vf2_state.cc"
 "src/vf2_sub_state.cc"
-"src/xsubgraph.cc")
+"src/xsubgraph.cc"
+)
 
 # Include the directory with the headers
 target_include_directories(vf2lib PUBLIC include)
+target_compile_options(vf2lib PRIVATE -Wno-write-strings -Wno-deprecated)
+
 
 # Link necessary libraries
 target_link_libraries(vf2lib PUBLIC pthread atomic)
