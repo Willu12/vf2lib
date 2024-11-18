@@ -23,22 +23,20 @@
 
 #include "error.h"
 
-
 /*------------------------------------------
  * void error(msg, ...)
- * Prints an error message and exits 
+ * Prints an error message and exits
  * the program.
- * The syntax is the same of printf, 
+ * The syntax is the same of printf,
  * except that a trailing \n is automatically
  * appended.
  -----------------------------------------*/
-void error(char *msg, ...)
-  { va_list ap;
+void error(const char* msg, ...) {
+    va_list ap;
     va_start(ap, msg);
     fprintf(stderr, "ERROR: ");
     vfprintf(stderr, msg, ap);
     fprintf(stderr, "\n");
     va_end(ap);
     exit(1);
-  }
-
+}
